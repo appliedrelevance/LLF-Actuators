@@ -1,0 +1,148 @@
+TYPE
+  LOGLEVEL : (CRITICAL, WARNING, INFO, DEBUG) := INFO;
+END_TYPE
+
+FUNCTION_BLOCK LOGGER
+  VAR_INPUT
+    TRIG : BOOL;
+    MSG : STRING;
+    LEVEL : LOGLEVEL := INFO;
+  END_VAR
+  VAR
+    TRIG0 : BOOL;
+  END_VAR
+
+  IF TRIG AND NOT TRIG0 THEN
+  {{
+   LogMessage(GetFbVar(LEVEL),(char*)GetFbVar(MSG, .body),GetFbVar(MSG, .len));
+  }}
+  END_IF;
+  TRIG0:=TRIG;
+END_FUNCTION_BLOCK
+
+
+
+FUNCTION_BLOCK python_eval
+  VAR_INPUT
+    TRIG : BOOL;
+    CODE : STRING;
+  END_VAR
+  VAR_OUTPUT
+    ACK : BOOL;
+    RESULT : STRING;
+  END_VAR
+  VAR
+    STATE : DWORD;
+    BUFFER : STRING;
+    PREBUFFER : STRING;
+    TRIGM1 : BOOL;
+    TRIGGED : BOOL;
+  END_VAR
+
+  {extern void __PythonEvalFB(int, PYTHON_EVAL*);__PythonEvalFB(0, data__);}
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK python_poll
+  VAR_INPUT
+    TRIG : BOOL;
+    CODE : STRING;
+  END_VAR
+  VAR_OUTPUT
+    ACK : BOOL;
+    RESULT : STRING;
+  END_VAR
+  VAR
+    STATE : DWORD;
+    BUFFER : STRING;
+    PREBUFFER : STRING;
+    TRIGM1 : BOOL;
+    TRIGGED : BOOL;
+  END_VAR
+
+  {extern void __PythonEvalFB(int, PYTHON_EVAL*);__PythonEvalFB(1,(PYTHON_EVAL*)(void*)data__);}
+END_FUNCTION_BLOCK
+
+FUNCTION_BLOCK python_gear
+  VAR_INPUT
+    N : UINT;
+    TRIG : BOOL;
+    CODE : STRING;
+  END_VAR
+  VAR_OUTPUT
+    ACK : BOOL;
+    RESULT : STRING;
+  END_VAR
+  VAR
+    py_eval : python_eval;
+    COUNTER : UINT;
+    _TMP_ADD10_OUT : UINT;
+    _TMP_EQ13_OUT : BOOL;
+    _TMP_SEL15_OUT : UINT;
+    _TMP_AND7_OUT : BOOL;
+  END_VAR
+
+  _TMP_ADD10_OUT := ADD(COUNTER, 1);
+  _TMP_EQ13_OUT := EQ(N, _TMP_ADD10_OUT);
+  _TMP_SEL15_OUT := SEL(_TMP_EQ13_OUT, _TMP_ADD10_OUT, 0);
+  COUNTER := _TMP_SEL15_OUT;
+  _TMP_AND7_OUT := AND(_TMP_EQ13_OUT, TRIG);
+  py_eval(TRIG := _TMP_AND7_OUT, CODE := CODE);
+  ACK := py_eval.ACK;
+  RESULT := py_eval.RESULT;
+END_FUNCTION_BLOCK
+
+
+PROGRAM Actuators
+  VAR
+    OPTO_00 : BOOL;
+    OPTO_01 : BOOL;
+    OPTO_02 : BOOL;
+    OPTO_03 : BOOL;
+    OPTO_04 : BOOL;
+    OPTO_05 : BOOL;
+    OPTO_06 : BOOL;
+    OPTO_07 : BOOL;
+    OPTO_10 : BOOL;
+    OPTO_11 : BOOL;
+    OPTO_12 : BOOL;
+    OPTO_13 : BOOL;
+    OPTO_14 : BOOL;
+    OPTO_15 : BOOL;
+    OPTO_16 : BOOL;
+    OPTO_17 : BOOL;
+    RELAY_00 : BOOL;
+    RELAY_01 : BOOL;
+    RELAY_02 : BOOL;
+    RELAY_03 : BOOL;
+    RELAY_04 : BOOL;
+    RELAY_05 : BOOL;
+    RELAY_06 : BOOL;
+    RELAY_07 : BOOL;
+    RELAY_10 : BOOL;
+    RELAY_11 : BOOL;
+    RELAY_12 : BOOL;
+    RELAY_13 : BOOL;
+    RELAY_14 : BOOL;
+    RELAY_15 : BOOL;
+    RELAY_16 : BOOL;
+    RELAY_17 : BOOL;
+  END_VAR
+
+  RELAY_00 := OPTO_00;
+  RELAY_01 := RELAY_01;
+  RELAY_02 := RELAY_02;
+  RELAY_03 := RELAY_03;
+  RELAY_04 := RELAY_04;
+  RELAY_05 := RELAY_05;
+  RELAY_06 := RELAY_06;
+  RELAY_07 := RELAY_07;
+END_PROGRAM
+
+
+CONFIGURATION Config0
+
+  RESOURCE Res0 ON PLC
+    TASK task0(INTERVAL := T#20ms,PRIORITY := 0);
+    PROGRAM instance0 WITH task0 : Actuators;
+  END_RESOURCE
+END_CONFIGURATION
